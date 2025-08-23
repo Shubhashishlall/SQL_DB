@@ -73,10 +73,10 @@ df['Facebook Conversion category' ] = create_conversion_category(df['Facebook Ad
 ax = sns.barplot(x='Adwords Conversion category', y='AdWords Ad Conversions', data=df)
 
 from os import rename
-Ad_cat = df.groupby('Adwords Conversion category', as_index =False)['AdWords Ad Conversions'].count().rename(columns={'Adwords Conversion category' : 'Category'})
+count_x = df.groupby('Adwords Conversion category', as_index =False)['AdWords Ad Conversions'].count().rename(columns={'Adwords Conversion category' : 'Category'})
 print(Ad_cat)
 
-FB_cat = (
+count_y = (
     df.groupby('Facebook Conversion category', as_index=False)['Facebook Ad Conversions']
       .count()
       .sort_values('Facebook Ad Conversions', ascending=False)
@@ -84,12 +84,77 @@ FB_cat = (
                        'Facebook Ad Conversions': 'Conversion_Count'})
 )
 
-print(FB_cat)
+print(count_y)
 
-category_df = pd.merge(Ad_cat,FB_cat, on='Category', how='outer').fillna(0)
+category_df = pd.merge(count_x,count_y, on='Category', how='outer').fillna(0)
+print(category_df)
+
+category_df = category_df.iloc[[3,1,0,2]]
 print(category_df)
 
 X_axis = np.arange(len(category_df))
 print(X_axis)
 
+plt.figure(figsize=(15,6))
+plt.bar(X_axis - 0.2, category_df['Conversion_Count'], 0.4, label = 'AdWords')
+plt.bar(X_axis + 0.2, category_df['AdWords Ad Conversions'], 0.4, label = 'Facebook')
+plt.xticks(X_axis, category_df['Category'] )
 
+plt.xlabel("Conversion by Category")
+plt.ylabel("Number of Conversions")
+plt.title("Frequency of Conversions by Conversion categories")
+plt.legend()
+plt.show()
+
+#The data suggests Facebook had more frequent higher conversion days thar AdWords, which either had very low conversion rates (less than 6) or moderate ones(6 - 10).
+
+plt.figure(figsize=(15,6))
+plt.subplot(1,2,1)
+plt.title('Facebook')
+sns.scatterplot(x='Facebook Ad Clicks', y='Facebook Ad Conversions', data=df)
+
+plt.subplot(1,2,2)
+plt.title('AdWords')
+sns.scatterplot(x='AdWords Ad Clicks', y='AdWords Ad Conversions', data=df)
+plt.show()
+
+facebook_corr = df[ ['Facebook Ad Clicks', 'Facebook Ad Conversions']].corr()
+print(facebook_corr)
+
+adwords_corr = df[ ['AdWords Ad Clicks', 'AdWords Ad Conversions']].corr()
+print(adwords_corr)
+
+# its possible if we invest more in FB it may give us more results
+
+#Hypotheses Testing#
+print(round(df['AdWords Ad Conversions'].mean(),2 ))
+
+print(round(df['Facebook Ad Conversions'].mean(),2 ))
+
+#facebook is more effective in generating conversions compared to Ad words
+#experimenting on new ads too
+
+#Regression Analysis :
+x = df[['Facebook Ad Clicks']]
+y = df['Facebook Ad Conversions']
+
+reg_model = LinearRegression()
+reg_model.fit(x,y)
+prediction = reg_model.predict(x)
+
+# model evaluation
+r2 = r2_score(y, prediction)*100
+mse = mean_squared_error(y, prediction)
+print('Accuracy (R2 Score):',round(r2,2),'%')
+print('Mean Squared Error:',round(mse,2))
+
+plt.figure(figsize=(8,6))
+sns. scatterplot(x = df ['Facebook Ad Clicks'],y = df ['Facebook Ad Conversions'], color = '#03989E', label = 'Actual data points')
+plt.plot(df ['Facebook Ad Clicks'], prediction, color = '#A62372', label = 'Best fit line')
+plt. legend()
+plt. show()
+print(f'For {50} Clicks, Expected Conversion : {round (reg_model.predict ([[50]]) [0] [0],2)}')
+print(f'For {80} Clicks, Expected Conversion : {round (reg_model.predict ( [[80]]) [0][0],2)}')
+
+#The model has a reasonably good predictive power, with an R2 score of 76.35%. This suggests that it can effectively predict Facebook ad conversions based on the number of Facebook ad clicks.
+# With the insights provided by the Linear Regression model.
